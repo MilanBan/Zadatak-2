@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Intern;
+use App\models\Intern;
 
 require_once realpath("vendor/autoload.php");
 
