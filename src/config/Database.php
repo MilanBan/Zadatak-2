@@ -1,5 +1,9 @@
 <?php 
 
+namespace App\config;
+
+use PDO;
+
 class Database {
     //DB params
     private $host = "127.0.0.1";
@@ -9,7 +13,7 @@ class Database {
     private $conn;
 
     //DB Connect
-    public function connect() {
+    protected function connect() {
         $this->conn = null;
 
         try {
