@@ -22,10 +22,10 @@ class UserController extends Database {
 
     }
 
-    protected function deleteUser($id) {
+    protected function deleteUser($id, $role_id) {
         
-        $stmt = $this->connect()->prepare('DELETE FROM users WHERE id = ?');
-        $stmt->execute([$id]);
+        $stmt = $this->connect()->prepare('DELETE FROM users WHERE id = ? AND role_id = ?');
+        $stmt->execute([$id, $role_id]);
 
     }
 }
