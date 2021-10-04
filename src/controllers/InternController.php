@@ -46,6 +46,42 @@ class InternController extends UserController {
         return $this->getUsers($sql);
     }
 
+    protected function updateIntern($id, $first_name, $last_name, $role_id, $group_id ){
+        //grab user-intern
+        $user = $this->getSingleIntern($id);
+
+        //set args
+        if($first_name == null){
+            $first_name = $user[0]['first_name'];
+        }
+        if($last_name == null){
+            $last_name = $user[0]['last_name'];
+        }
+        if($role_id == null){
+            $role_id = $user[0]['role_id'];
+        }
+        if($group_id == null){
+            $group_id = $user[0]['group_id'];
+        }
+        
+        // group check
+        if($group_id == 1 || $group_id == 2) {
+            $this->group_id = $group_id;
+        }else{
+            $group_id = 3;
+        }
+
+        $data = [
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'role_id' => $role_id,
+            'group_id' => $group_id,
+            'id' => $id
+        ];
+    
+        return $this->updateUser($data);
+    }
+
     protected function deleteIntern($id) {
         
         $role_id = 2;

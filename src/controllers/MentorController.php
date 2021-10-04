@@ -2,6 +2,7 @@
 
 namespace App\controllers;
 
+
 use App\controllers\UserController;
 
 class MentorController extends UserController {
@@ -24,9 +25,24 @@ class MentorController extends UserController {
         
         return $this->setUser($sql, $array);
     }
-    //NIJE GOTOV
-    protected function updateMentor($id, ){
-        $role_id = 1;
+    
+    protected function updateMentor($id, $first_name, $last_name, $role_id, $group_id ){
+        //grab user-mentor
+        $user = $this->getSingleMentor($id);
+
+        //set args
+        if($first_name == null){
+            $first_name = $user[0]['first_name'];
+        }
+        if($last_name == null){
+            $last_name = $user[0]['last_name'];
+        }
+        if($role_id == null){
+            $role_id = $user[0]['role_id'];
+        }
+        if($group_id == null){
+            $group_id = $user[0]['group_id'];
+        }
         
         // group check
         if($group_id == 1 || $group_id == 2) {
@@ -35,12 +51,15 @@ class MentorController extends UserController {
             $group_id = 3;
         }
 
-        $sql = 'UPDATE users SET (first_name, last_name, role_id, group_id) VALUES (?, ?, ?, ?)';
-        
-        $array = [];
-        array_push($array, $first_name, $last_name, $role_id, $group_id);
-        
-        return $this->setUser($sql, $array);
+        $data = [
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'role_id' => $role_id,
+            'group_id' => $group_id,
+            'id' => $id
+        ];
+    
+        return $this->updateUser($data);
     }
     
     protected function getMentors() {

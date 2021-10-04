@@ -81,7 +81,7 @@ class CommentController extends Database {
         return $stmt;
     }
 
-    protected function delete($id) {
+    protected function deleteComment($id) {
         
         $stmt = $this->connect()->prepare('DELETE FROM comments WHERE id = ?');
         $stmt->execute([$id]);
