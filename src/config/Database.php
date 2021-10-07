@@ -3,6 +3,7 @@
 namespace App\config;
 
 use PDO;
+use PDOException;
 
 class Database {
     //DB params

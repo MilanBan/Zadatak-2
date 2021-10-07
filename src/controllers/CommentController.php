@@ -7,83 +7,151 @@ use App\config\Database;
 
 class CommentController extends Database {
 
-    public function set($mentor_id, $intern_id, $content) {
-        
-        $sql = 'INSERT INTO comments(author_id, user_id, content) VALUES (?, ?, ?)';
-        
+    protected function set($mentor_id, $intern_id, $content) {
 
+        $content = trim($content);
+        
+        if(!is_int($mentor_id) || !is_int($intern_id)){
+            return ['ID of mentor and intern must be number.'];
+        }
+        if(strlen($content) < 2) {
+            return ['Comment must contain at least two character.'];
+        }
+
+        //grab mentor and intern
+        $m = $this->connect()->query('SELECT * FROM users WHERE id='.$mentor_id.' AND role_id=1')->fetchAll(PDO::FETCH_ASSOC);
+        $i = $this->connect()->query('SELECT * FROM users WHERE id='.$intern_id.' AND role_id=2')->fetchAll(PDO::FETCH_ASSOC);
+        if(!$m){
+            return ['Mentor with id='.$mentor_id.' does not exist'];
+        }
+        if(!$i){
+            return ['Intern with id='.$intern_id.' does not exist'];
+        }
+        if($m[0]['group_id'] == $i[0]['group_id']) {
+            
+            $sql = 'INSERT INTO comments(author_id, user_id, content) VALUES (?, ?, ?)';
+        
+            $stmt = $this->connect()->prepare($sql);
+            $stmt->execute([$mentor_id, $intern_id, $content]);
+
+            return ['Comment created'];
+
+        }else return ['Mentor and intern are not the same group.'];
+        
+    }
+
+    protected function update($id, $content=null) {
+
+        $content = trim($content);
+
+        if(!is_int($id)){
+            return ['ID of comment must be number.'];
+        }
+        if($content !== null){
+            if(strlen($content) < 2) {
+                return ['Comment must contain at least two character.'];
+            }
+        }
+        $sql= 'UPDATE comments SET content=? WHERE id=?';
         $stmt = $this->connect()->prepare($sql);
-        $stmt->execute([$mentor_id, $intern_id, $content]);
+        $res = $stmt->execute([$content, $id]);
+        
+        return ['Comment with id='.$id.' are successfully updated.'];
 
-        return 'Comment created';
     }
 
     protected function getList() {
         //comment with author
-        $sql1 = 'SELECT comments.id, comments.author_id, comments.user_id, users.first_name, users.last_name, comments.content
+        $sqlM = 'SELECT comments.id, comments.author_id, comments.user_id, comments.created_at, users.first_name, users.last_name, comments.content
                 FROM comments
                 LEFT JOIN users ON comments.author_id = users.id
+                ORDER BY comments.created_at DESC
                 ';
         //comment with intern
-        $sql2 = 'SELECT comments.id, users.first_name, users.last_name
+        $sqlI = 'SELECT comments.id, users.first_name, users.last_name
                 FROM comments
                 LEFT JOIN users ON comments.user_id = users.id
                 ';
 
-        $stmt1 = $this->connect()->query($sql1)->fetchAll(PDO::FETCH_ASSOC);
-        $stmt2 = $this->connect()->query($sql2)->fetchAll(PDO::FETCH_ASSOC);
+        $cms = $this->connect()->query($sqlM)->fetchAll(PDO::FETCH_ASSOC);
+        $cis = $this->connect()->query($sqlI)->fetchAll(PDO::FETCH_ASSOC);
 
-        for($i=0; $i<count($stmt1); $i++){
-            $stmt[] = [
-                'id' => $stmt1[$i]['id'],
-                'comment' => $stmt1[$i]['content'],
-                'made by' => $stmt1[$i]['first_name'].' '.$stmt1[$i]['last_name'],
-                'made for' => $stmt2[$i]['first_name'].' '.$stmt2[$i]['last_name'],
-            ];
+        $data = [];
+
+        foreach($cms as $cm){
+            foreach($cis as $ci){
+                if($cm['id'] == $ci['id']){
+                    $dataC = [
+                        'id' => $cm['id'],
+                        'comment' => $cm['content'],
+                        'made by' => $cm['first_name'].' '.$cm['last_name'],
+                        'made for' => $ci['first_name'].' '.$ci['last_name'],
+                        'created_at' => $cm['created_at']
+                    ];
+                    array_push($data, $dataC);
+                }
+
+            }
         }
 
-        $stmt = json_encode($stmt);
+        // $stmt = json_encode($stmt);
         
-        return $stmt;
+        return $data;
     }
 
     protected function getSingleComment($id) {
 
-        //comment with author
-        $sql1 = 'SELECT comments.id, comments.author_id, comments.user_id, users.first_name, users.last_name, comments.content
-                FROM comments
-                LEFT JOIN users ON comments.author_id = users.id
-                WHERE users.id = '.$id;
-
-        $stmt1 = $this->connect()->query($sql1)->fetchAll(PDO::FETCH_ASSOC);
-
-        $intern_id = $stmt1[0]['user_id'];
-
-        //comment with intern
-        $sql2 = 'SELECT comments.id, users.first_name, users.last_name
-                FROM comments
-                LEFT JOIN users ON comments.user_id = users.id
-                WHERE users.id = '.$intern_id;
-
-        $stmt2 = $this->connect()->query($sql2)->fetchAll(PDO::FETCH_ASSOC);
-
-        for($i=0; $i<count($stmt1); $i++){
-            $stmt[] = [
-                'id' => $stmt1[$i]['id'],
-                'comment' => $stmt1[$i]['content'],
-                'made by' => $stmt1[$i]['first_name'].' '.$stmt1[$i]['last_name'],
-                'made for' => $stmt2[$i]['first_name'].' '.$stmt2[$i]['last_name'],
-            ];
+        if(!is_int($id)){
+            return ['ID of comment must be number.'];
         }
 
-        $stmt = json_encode($stmt);
+        //comment with author
+        $sqlM = 'SELECT comments.id, comments.author_id, comments.user_id, comments.content, comments.created_at, users.first_name, users.last_name 
+                FROM comments
+                LEFT JOIN users ON comments.author_id = users.id
+                WHERE comments.id = '.$id. '
+                ORDER BY comments.created_at DESC';
+
+        $sqlI = 'SELECT comments.id, users.first_name, users.last_name 
+                FROM comments
+                LEFT JOIN users ON comments.user_id = users.id
+                WHERE comments.id = '.$id;
+
+        $cm = $this->connect()->query($sqlM)->fetchAll(PDO::FETCH_ASSOC);
+        $ci = $this->connect()->query($sqlI)->fetchAll(PDO::FETCH_ASSOC);
+
+        if(!$cm){
+            return ['Comment with id='.$id.' does not exist.'];
+        }
+
+        $data = [
+            'id' => $cm[0]['id'],
+            'mentor' => $cm[0]['first_name'].' '.$cm[0]['last_name'],
+            'intern' => $ci[0]['first_name'].' '.$ci[0]['last_name'],
+            'content' => $cm[0]['content'],
+            'created at' => $cm[0]['created_at']
+        ];
+        return $data;
         
-        return $stmt;
     }
 
     protected function deleteComment($id) {
-        
-        $stmt = $this->connect()->prepare('DELETE FROM comments WHERE id = ?');
-        $stmt->execute([$id]);
+        if($this->isExist($id)){
+            $stmt = $this->connect()->prepare('DELETE FROM comments WHERE id = ?');
+            $stmt->execute([$id]);
+        }return ['Comment with id='.$id.' does not exist.'];
+    }
+
+    //helper
+    protected function isExist($param) {
+        $stmt = [];
+        if(is_int($param)){
+
+            $sql = 'SELECT * FROM comments WHERE id='.$param; 
+            $stmt = $this->connect()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+            $res = $stmt;
+        }
+        return $res;
     }
 }

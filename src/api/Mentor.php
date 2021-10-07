@@ -3,33 +3,35 @@
 namespace App\api;
 
 use App\controllers\MentorController;
-use App\controllers\CommentController;
 
 class Mentor extends MentorController {
     
+    public function create($first_name=null, $last_name=null, $group_id=null) {
+
+        return json_encode(MentorController::setMentor($first_name, $last_name, $group_id));
+    }
+
     public function show($id = null) {
 
         if($id){
             
-            return MentorController::getSingleMentor($id);
+            return json_encode(MentorController::getSingleMentor($id));
+
         }if(!$id){
             
-            return MentorController::getMentors();
+            return json_encode(MentorController::getMentors());
+            
         }
     }
 
-    public function update($id, $first_name=null, $last_name=null, $role_id=null, $group_id=null ) {
+    public function update($id, $first_name=null, $last_name=null, $group_id=null ) {
         
-        return MentorController::updateMentor($id, $first_name, $last_name, $role_id, $group_id);
+        return json_encode(MentorController::updateMentor($id, $first_name, $last_name, $group_id));
     }
 
-    public function create($first_name, $last_name, $role_id, $group_id) {
-
-        return MentorController::setMentor($first_name, $last_name, $role_id, $group_id);
-    }
 
     public function delete($id) {
 
-        return MentorController::deleteMentor($id);
+        return json_encode(MentorController::deleteMentor($id));
     }
 }
